@@ -9,6 +9,9 @@ $worker->addFunction("get_weather", "get_weather");
 
 console("Started worker script.");
 
+// This is the "worker" loop, endless (unless there is an error...)
+// How would we detect this in a real-world situation? You could daemonize this
+// script but that doesn't seem ideal solution.
 while ($worker->work())
 {
 	console("--------------------------");
@@ -62,9 +65,15 @@ function get_weather($job)
 	$obj = json_decode($json);
 	$new_json = json_encode($obj->query->results->weather->rss->channel->item);
 
+	// Write the data to /tmp for client-nonblocking background worker
+	// In a realworld we'd write this data to somewhere else, maybe a database
+	// or something, as the client might not have access to local filesystem!
+	$datafile = sys_get_temp_dir() . "/gm_data_" . md5($job->handle());
+	file_put_contents($datafile, $new_json);
+
 	// Sleep for fun...
 	console("Falling asleep here");
-	sleep(2);
+	sleep(10);
 
 	console("Done, returning weather");
 

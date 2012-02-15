@@ -1,12 +1,14 @@
 <?php
 
+require_once("shared.php");
+
 // Using gearman 0.28
 
 $client = new GearmanClient();
 $client->addServer("127.0.0.1");
 
 // set the complete callback
-$client->setCompleteCallback("cbDone");
+$client->setCompleteCallback("weather_complete");
 
 // Construct a data object to request some weather for a location and units (c or f)
 $data = new stdClass();
@@ -17,31 +19,15 @@ $task1 = $client->addTask("get_weather", json_encode($data));
 // Run the tasks (this blocks!)
 $result = $client->runTasks();
 
-// Callback function for when it's done
-function cbDone($task)
+/**
+ * Callback function for when the task is done
+ * @param GearmanTask $task
+ */
+function weather_complete($task)
 {
 	echo "Task [" . $task->functionName() . "] complete...\n";
 
-	switch ($task->functionName())
-	{
-		case "add":
-			echo "The sum is " . $task->data() . ".\n";
-			break;
-		case "get_weather":
-			$weather = json_decode($task->data());
+	$weather = json_decode($task->data());
 
-			echo "{$weather->title}\n";
-			echo str_repeat("-", strlen($weather->title)) . "\n\n";
-
-			echo "Current conditions:\n";
-			echo "{$weather->condition->text}, {$weather->condition->temp}deg\n\n";
-
-			echo "Forecast:\n";
-			foreach ($weather->forecast as $forecast)
-			{
-				echo "{$forecast->day} - {$forecast->text}. High: {$forecast->high} Low: {$forecast->low}\n";
-			}
-			break;
-	}
+	echo format_yql_weather($weather);
 }
-
