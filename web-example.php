@@ -61,6 +61,18 @@ if(isset($_REQUEST["job"]))
 			break;
 		case "stop":
 			// Kill a running background worker!
+			$job_handle = $_REQUEST['job_handle'];
+			$data = new stdClass();
+			$data->job_handle = $job_handle;
+			$kill_job_handle = $client->doBackground("kill_job", json_encode($data));
+			if($client->returnCode() != GEARMAN_SUCCESS)
+			{
+				echo json_encode(array("status" => "failed"));
+			}
+			else
+			{
+				echo json_encode(array("status" => "success"));
+			}
 			break;
 	}
 	die();

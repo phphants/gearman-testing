@@ -65,26 +65,56 @@ function checkStatus()
 
 addOnLoad(function() {
 	$('link_start').observe('click', function(event) {
-		var url = base_url + 'start';
-		
-		new Ajax.Request(url, {
-			method: 'get',
-			onSuccess: function(transport) {
-				var response = transport.responseText.evalJSON();
-				if(response.status == 'success')
-				{
-					current_job_handle = response.job_handle;
-					$('current_status').innerHTML = 'Job started with handle: ' + current_job_handle;
-					checkStatus();
+		if(current_job_handle == '')
+		{
+			var url = base_url + 'start';
+			
+			new Ajax.Request(url, {
+				method: 'get',
+				onSuccess: function(transport) {
+					var response = transport.responseText.evalJSON();
+					if(response.status == 'success')
+					{
+						current_job_handle = response.job_handle;
+						$('current_status').innerHTML = 'Job started with handle: ' + current_job_handle;
+						checkStatus();
+					}
+					else
+					{
+						$('current_status').innerHTML = 'Failed to start job :(';
+					}
 				}
-				else
-				{
-					$('current_status').innerHTML = 'Failed to start job :(';
-				}
-			}
-		});
+			});
+		}
+		else
+		{
+			alert('Already doing job ' + current_job_handle);
+		}
 	});
 	$('link_stop').observe('click', function(event) {
-		alert('clicky2!');
+		if(current_job_handle != '')
+		{
+			var url = base_url + 'stop&job_handle=' + current_job_handle;
+			
+			new Ajax.Request(url, {
+				method: 'get',
+				onSuccess: function(transport) {
+					var response = transport.responseText.evalJSON();
+					if(response.status == 'success')
+					{
+						$('current_status').innerHTML = 'Killed job';
+						//current_job_handle = '';
+					}
+					else
+					{
+						$('current_status').innerHTML = 'Failed to kill job :(';
+					}
+				}
+			});
+		}
+		else
+		{
+			alert('Not aware of a job to stop...');
+		}
 	});
 });

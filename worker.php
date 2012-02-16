@@ -6,6 +6,7 @@ $worker= new GearmanWorker();
 $worker->addServer('127.0.0.1');
 
 $worker->addFunction("get_weather", "get_weather");
+$worker->addFunction("kill_job", "kill_job");
 
 console("Started worker script.");
 
@@ -34,12 +35,55 @@ function console($text)
 }
 
 /**
+ * Function to kill another job
+ */
+function kill_job($job)
+{
+	console("New job: " . $job->handle() . " (" . __FUNCTION__ . ")");
+
+	$data = json_decode($job->workload());
+
+	// kill job defined in $data
+	$pidfile = sys_get_temp_dir() . "/gm_pid_" . md5($data->job_handle);
+	$pid = file_get_contents($pidfile);
+
+	if($pid)
+	{
+		console("Killing handle {$data->job_handle} (pid={$pid})");
+
+		$cmd = "kill -9 {$pid}";
+		$errno = 0;
+		$output = array();
+		exec($cmd . " 2>&1", $output, $errno);
+
+		if($errno == 0)
+		{
+			console("Killed.");
+		}
+		else
+		{
+			consoled("Failed to kill pid");
+		}
+	}
+	else
+	{
+		console("pidfile for {$data->job_handle} not found");
+	}
+
+	console("Done");
+
+	return true;
+}
+
+/**
  * Get weather information
  * @param GearmanJob $job
  */
 function get_weather($job)
 {
 	console("New job: " . $job->handle() . " (" . __FUNCTION__ . ")");
+	$pidfile = sys_get_temp_dir() . "/gm_pid_" . md5($job->handle());
+	file_put_contents($pidfile, getmypid());
 
 	$data = json_decode($job->workload());
 
@@ -83,6 +127,7 @@ function get_weather($job)
 	}
 
 	console("Done, returning weather");
+	unlink($pidfile);
 
 	return $new_json;
 }
