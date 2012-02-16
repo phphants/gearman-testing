@@ -55,8 +55,15 @@ if(isset($_REQUEST["job"]))
 			// Retrieve the data
 			$job_handle = $_REQUEST['job_handle'];
 			$file = sys_get_temp_dir() . "/gm_data_" . md5($job_handle);
-			$json = file_get_contents($file);
-			$weather_text = format_yql_weather(json_decode($json));
+			if(file_exists($file))
+			{
+				$json = file_get_contents($file);
+				$weather_text = format_yql_weather(json_decode($json));
+			}
+			else
+			{
+				$weather_text = '';
+			}
 			echo json_encode(array("data" => $weather_text));
 			break;
 		case "stop":

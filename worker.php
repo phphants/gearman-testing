@@ -51,6 +51,9 @@ function kill_job($job)
 	{
 		console("Killing handle {$data->job_handle} (pid={$pid})");
 
+		$norestart = sys_get_temp_dir() . "/gm_norestart_" . md5($data->job_handle);
+		touch($norestart);
+
 		$cmd = "kill -9 {$pid}";
 		$errno = 0;
 		$output = array();
@@ -82,6 +85,13 @@ function kill_job($job)
 function get_weather($job)
 {
 	console("New job: " . $job->handle() . " (" . __FUNCTION__ . ")");
+	$norestart = sys_get_temp_dir() . "/gm_norestart_" . md5($job->handle());
+	if(file_exists($norestart))
+	{
+		console("norestart exists, returning");
+		return;
+	}
+
 	$pidfile = sys_get_temp_dir() . "/gm_pid_" . md5($job->handle());
 	file_put_contents($pidfile, getmypid());
 
@@ -109,12 +119,6 @@ function get_weather($job)
 	$obj = json_decode($json);
 	$new_json = json_encode($obj->query->results->weather->rss->channel->item);
 
-	// Write the data to /tmp for client-nonblocking background worker
-	// In a realworld we'd write this data to somewhere else, maybe a database
-	// or something, as the client might not have access to local filesystem!
-	$datafile = sys_get_temp_dir() . "/gm_data_" . md5($job->handle());
-	file_put_contents($datafile, $new_json);
-
 	// Sleep for fun...
 	console("Falling asleep here");
 
@@ -125,6 +129,12 @@ function get_weather($job)
 		$job->sendStatus($i,$sleep_for);
 		sleep(1);
 	}
+
+	// Write the data to /tmp for client-nonblocking background worker
+	// In a realworld we'd write this data to somewhere else, maybe a database
+	// or something, as the client might not have access to local filesystem!
+	$datafile = sys_get_temp_dir() . "/gm_data_" . md5($job->handle());
+	file_put_contents($datafile, $new_json);
 
 	console("Done, returning weather");
 	unlink($pidfile);

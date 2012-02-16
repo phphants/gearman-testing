@@ -14,9 +14,12 @@ function format_yql_weather($weather)
 	$str .= "{$weather->condition->text}, {$weather->condition->temp}deg\n\n";
 
 	$str .= "Forecast:\n";
-	foreach ($weather->forecast as $forecast)
+	if(is_array($weather->forecast))
 	{
-		$str .= "{$forecast->day} - {$forecast->text}. High: {$forecast->high} Low: {$forecast->low}\n";
+		foreach ($weather->forecast as $forecast)
+		{
+			$str .= "{$forecast->day} - {$forecast->text}. High: {$forecast->high} Low: {$forecast->low}\n";
+		}
 	}
 
 	return $str;
