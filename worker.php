@@ -30,7 +30,7 @@ while ($worker->work())
  */
 function console($text)
 {
-	echo date("Y-m-d H:i:s") . "   $text\n";
+	echo "[" . getmypid() . "] " . date("Y-m-d H:i:s") . "   $text\n";
 }
 
 /**
@@ -73,7 +73,14 @@ function get_weather($job)
 
 	// Sleep for fun...
 	console("Falling asleep here");
-	sleep(10);
+
+	$sleep_for = 10;
+	for($i = 1; $i <= $sleep_for; $i++)
+	{
+		console("Sending Status $i/$sleep_for");
+		$job->sendStatus($i,$sleep_for);
+		sleep(1);
+	}
 
 	console("Done, returning weather");
 
